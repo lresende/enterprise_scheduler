@@ -8,7 +8,20 @@ from setuptools import setup, find_packages
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
-requirements = ['Click>=6.0', ]
+requirements = [
+    'click>=6.0',
+    'bumpversion == 0.5.3',
+    'wheel == 0.30.0',
+    'watchdog == 0.8.3',
+    'flake8 == 3.5.0',
+    'tox == 2.9.1',
+    'coverage == 4.5.1',
+    'Sphinx == 1.7.1',
+    'twine == 1.10.0',
+    'nbconvert == 5.3.1',
+    'requests >= 2.8, < 3.0',
+    'flask - restful == 0.3.6'
+]
 
 setup_requirements = [ ]
 
@@ -36,7 +49,7 @@ setup(
         ],
     },
     install_requires=requirements,
-    license="BSD license",
+    license="Apache license",
     long_description=readme,
     include_package_data=True,
     keywords='enterprise_scheduler',
