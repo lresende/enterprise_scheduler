@@ -45,7 +45,7 @@ setup(
     description="Python Boilerplate contains all the boilerplate you need to create a Python package.",
     entry_points={
         'console_scripts': [
-            'enterprise_scheduler=enterprise_scheduler.cli:main',
+            'enterprise_scheduler=enterprise_scheduler.scheduler_application:main',
         ],
     },
     install_requires=requirements,

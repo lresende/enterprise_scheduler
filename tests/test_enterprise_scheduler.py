@@ -8,7 +8,7 @@ import unittest
 from click.testing import CliRunner
 
 from enterprise_scheduler import enterprise_scheduler
-from enterprise_scheduler import cli
+from enterprise_scheduler import scheduler_application
 
 
 class TestEnterprise_scheduler(unittest.TestCase):
@@ -26,9 +26,9 @@ class TestEnterprise_scheduler(unittest.TestCase):
     def test_command_line_interface(self):
         """Test the CLI."""
         runner = CliRunner()
-        result = runner.invoke(cli.main)
+        result = runner.invoke(scheduler_application.main)
         assert result.exit_code == 0
         assert 'enterprise_scheduler.cli.main' in result.output
-        help_result = runner.invoke(cli.main, ['--help'])
+        help_result = runner.invoke(scheduler_application.main, ['--help'])
         assert help_result.exit_code == 0
         assert '--help  Show this message and exit.' in help_result.output

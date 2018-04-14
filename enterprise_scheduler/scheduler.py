@@ -23,7 +23,7 @@ import nbformat
 from nbconvert import PDFExporter
 from traitlets.config import Config
 
-from kernel_client import KernelLauncher, Kernel
+from enterprise_scheduler.kernel_client import KernelLauncher, Kernel
 
 
 class Scheduler:
