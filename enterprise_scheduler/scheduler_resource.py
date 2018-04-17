@@ -4,9 +4,6 @@ from flask_restful import Resource
 
 from enterprise_scheduler.scheduler import Scheduler
 
-DEFAULT_HOST = 'lresende-elyra:8888'
-DEFAULT_KERNELSPEC = 'spark_scala_yarn_cluster'
-
 scheduler = Scheduler()
 scheduler.start()
 
@@ -38,9 +35,6 @@ class SchedulerResource(Resource):
 
         if 'kernelspec' not in task.keys():
             task['kernelspec'] = self.default_kernelspec
-
-        if not task['notebook_location']:
-            raise ValueError('Submitted task is missing [notebook_location] information')
 
         scheduler.schedule_task(task)
 

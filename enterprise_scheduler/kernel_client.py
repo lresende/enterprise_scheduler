@@ -1,13 +1,9 @@
-
-import os
-import time
-from uuid import uuid4
-from pprint import pprint
-from tornado.escape import json_encode, json_decode, url_escape
-from tornado.websocket import websocket_connect
-from tornado.ioloop import IOLoop
-from tornado.httpclient import HTTPRequest
 import requests
+from tornado.escape import json_encode, json_decode
+from tornado.httpclient import HTTPRequest
+from tornado.ioloop import IOLoop
+from tornado.websocket import websocket_connect
+from uuid import uuid4
 
 DEFAULT_TIMEOUT = 60 * 60
 DEFAULT_USERNAME = 'anonymous'

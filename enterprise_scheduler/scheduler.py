@@ -1,34 +1,21 @@
-
-"""
-    'owner': 'airflow',
-    'depends_on_past': False,
-    'start_date': datetime(2015, 6, 1),
-    'email': ['airflow@example.com'],
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
-    # 'queue': 'bash_queue',
-    # 'pool': 'backfill',
-    # 'priority_weight': 10,
-    # 'end_date': datetime(2016, 1, 1),
-"""
-
+import json
 import queue
-from threading import Thread
 import time
 from urllib.request import urlopen
 
 import nbformat
-from nbconvert import PDFExporter
-from traitlets.config import Config
+import uuid
+from threading import Thread
 
-from enterprise_scheduler.kernel_client import KernelLauncher, Kernel
+from enterprise_scheduler.kernel_client import KernelLauncher
 
 
 class Scheduler:
 
-    def __init__(self):
+    def __init__(self, default_gateway_host=None, default_kernelspec=None):
+        self.default_gateway_host = default_gateway_host
+        self.default_kernelspec = default_kernelspec
+
         self.queue = queue.PriorityQueue()
         self.executors = []
 
@@ -40,45 +27,56 @@ class Scheduler:
                 self.queue.task_done()
 
     def _execute_task(self, task):
+
         # start notebook
         print('')
-        print('Start notebook execution')
-        print('Starting kernel')
-        print(task)
+        print('Start notebook execution...')
+        print('Starting kernel...')
+
         launcher = KernelLauncher(task['host'])
         kernel = launcher.launch(task['kernelspec'])
 
-        # execute all cells
-        notebook_content = urlopen(task['notebook_location']).read().decode()
-        notebook = nbformat.reads(notebook_content, as_version=4)
-
         time.sleep(10)
 
-        print('Starting cell execution')
-        for cell in notebook.cells:
-            print('Executing cell\n{}'.format(cell.source))
-            response = kernel.execute(cell.source)
-            print('Response\n{}'.format(response))
+        # execute all cells
+        try:
+            print('reading notebook contents')
+            notebook = nbformat.reads(json.dumps(task['notebook']), as_version=4)
 
-        print('Starting kernel shutdown')
-        # shutdown notebook
-        launcher.shutdown(kernel.kernel_id)
+            print('Starting cell execution')
+            for cell in notebook.cells:
+                print('Executing cell\n{}'.format(cell.source))
+                response = kernel.execute(cell.source)
+                print('Response\n{}'.format(response))
+                outputs = []
+                outputs.append(response)
+                cell['outputs'] = outputs
+
+
+        except BaseException as base:
+            print('Error executing notebook cells: {}'.format(base))
+
+        finally:
+            print('Starting kernel shutdown')
+            # shutdown notebook
+            launcher.shutdown(kernel.kernel_id)
 
         print('Notebook execution done')
         print('')
 
     def schedule_task(self, task):
-        print('adding task to queue: ' + str(task))
+        id = uuid.uuid4()
+        task['id'] = id
+
+        if 'notebook_location' in task.keys():
+            notebook_location = task['notebook_location']
+            task['notebook'] = self._read_remote_notebook_content(notebook_location)
+
+        self._validate_task(task)
+
+        print('adding task [{}] to queue:\n {}'.format(id, str(task)))
         self.queue.put(item=task)
-
-    def schedule(self, host, kernelspec, notebook_location, priority):
-        task = {}
-        task['host'] = host
-        task['kernelspec'] =  kernelspec
-        task['notebook_location'] = notebook_location
-        task['priority'] = priority
-
-        self.schedule_task(task)
+        return id
 
     def start(self):
         for i in range(1, 5):
@@ -89,13 +87,31 @@ class Scheduler:
 
             t.start()
 
-
     def stop(self):
         self.queue.join()
 
         for t in self.executors:
             t._stop()
 
+    @staticmethod
+    def _validate_task(task):
+        if 'host' not in task.keys():
+            raise ValueError('Submitted task is missing [host] information')
+
+        if 'kernelspec' not in task.keys():
+            raise ValueError('Submitted task is missing [kernelspec] information')
+
+        if 'notebook_location' not in task.keys() and 'notebook' not in task.keys():
+            raise ValueError('Submitted task is missing notebook information (either notebook_location or notebook)')
+
+
+    @staticmethod
+    def _read_remote_notebook_content(notebook_location):
+        try:
+            notebook_content = urlopen(notebook_location).read().decode()
+            return notebook_content
+        except BaseException as base:
+            raise Exception('Error reading notebook source "{}": {}'.format(notebook_location, base))
 
 #
 # host = 'lresende-elyra:8888'
