@@ -24,6 +24,11 @@ for line in sys.stdin:
 endef
 export PRINT_HELP_PYSCRIPT
 
+WHEEL_FILES:=$(shell find . -type f ! -path "./build/*" ! -path "./etc/*" ! -path "./docs/*" ! -path "./.git/*" ! -path "./.idea/*" ! -path "./dist/*" ! -path "./.image-*" )
+WHEEL_FILE := dist/enterprise_scheduler*.whl
+TAR_FILE := dist/enterprise_scheduler*.tar.gz
+TAG := dev
+
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
 
 help:
@@ -79,10 +84,34 @@ servedocs: docs ## compile the docs watching for changes
 release: dist ## package and upload a release
 	twine upload dist/*
 
-dist: clean ## builds source and wheel package
-	python setup.py sdist
+$(WHEEL_FILE): $(WHEEL_FILES)
 	python setup.py bdist_wheel
+
+bdist: 
+	@make $(WHEEL_FILE)
+	
+sdist:
+	python setup.py sdist
+
+dist: clean ## builds source and wheel package
+	@make sdist
+	@make bdist
 	ls -l dist
 
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install
+
+docker-image: .image-docker ## Build elyra/enterprise-scheduler:dev docker image
+.image-docker: etc/docker/* $(WHEEL_FILE)
+	@make clean-docker-image
+	@make bdist
+	@mkdir -p build/docker
+	cp etc/docker/* build/docker
+	cp dist/enterprise_scheduler*.whl build/docker
+	@(cd build/docker; docker build -t elyra/enterprise-scheduler:$(TAG) . )
+	@touch .image-docker
+	@-docker images elyra/enterprise-scheduler:$(TAG)
+
+clean-docker-image: ## Remove elyra/enterprise-scheduler:dev docker image
+	@rm -f .image-docker
+	@-docker rmi -f elyra/enterprise-scheduler:$(TAG)
