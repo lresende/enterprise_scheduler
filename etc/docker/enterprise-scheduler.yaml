@@ -1,0 +1,53 @@
+# This file defines the Kubernetes objects necessary for Enterprise Scheduler to run witihin Kubernetes.
+#
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: enterprise-gateway
+    component: enterprise-scheduler
+  name: enterprise-scheduler
+spec:
+  ports:
+  - name: http
+    port: 5000
+    targetPort: 5000
+  selector:
+    scheduler-selector: enterprise-scheduler
+  sessionAffinity: ClientIP
+  type: NodePort
+  externalIPs:
+  - 9.30.118.200
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: enterprise-scheduler
+  labels:
+    scheduler-selector: enterprise-scheduler
+    app: enterprise-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      scheduler-selector: enterprise-scheduler
+  template:
+    metadata:
+      labels:
+        scheduler-selector: enterprise-scheduler
+        app: enterprise-gateway
+        component: enterprise-scheduler
+    spec:
+      containers:
+      - env:
+        - name: EGS_SCHEDULER_HOST
+          value: "0.0.0.0:5000"
+        - name: EGS_GATEWAY_HOST
+          value: "enterprise-gateway.default.svc.cluster.local:8888"
+        - name: EGS_KERNELSPECS
+          value: "python_tf_kubernetes"
+        image: elyra/enterprise-scheduler:dev
+        name: enterprise-scheduler
+        ports:
+        - containerPort: 5000
