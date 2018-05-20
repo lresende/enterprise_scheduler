@@ -1,68 +1,37 @@
-import json
 import queue
-import time
-from urllib.request import urlopen
-
-import nbformat
 import uuid
 from threading import Thread
+from urllib.request import urlopen
 
-from enterprise_scheduler.kernel_client import KernelLauncher
+from enterprise_scheduler.executor import JupyterExecutor, FfDLExecutor
 
 
 class Scheduler:
 
-    def __init__(self, default_gateway_host=None, default_kernelspec=None):
+    def __init__(self, default_gateway_host=None, default_kernelspec=None, number_of_threads=5):
         self.default_gateway_host = default_gateway_host
         self.default_kernelspec = default_kernelspec
+        self.number_of_threads = number_of_threads
+
+        self.executors = {}
+        self.executors[JupyterExecutor.TYPE] = JupyterExecutor()
+        self.executors[FfDLExecutor.TYPE] = FfDLExecutor()
 
         self.queue = queue.PriorityQueue()
-        self.executors = []
+        self.executor_threads = []
+        self.running = False
 
     def _executor(self):
-        while True:
+        while self.running:
             if not self.queue.empty():
                 task = self.queue.get()
                 self._execute_task(task)
                 self.queue.task_done()
 
     def _execute_task(self, task):
-
-        # start notebook
-        print('')
-        print('Start notebook execution...')
-        print('Starting kernel...')
-
-        launcher = KernelLauncher(task['host'])
-        kernel = launcher.launch(task['kernelspec'])
-
-        time.sleep(10)
-
-        # execute all cells
-        try:
-            print('reading notebook contents')
-            notebook = nbformat.reads(json.dumps(task['notebook']), as_version=4)
-
-            print('Starting cell execution')
-            for cell in notebook.cells:
-                print('Executing cell\n{}'.format(cell.source))
-                response = kernel.execute(cell.source)
-                print('Response\n{}'.format(response))
-                outputs = []
-                outputs.append(response)
-                cell['outputs'] = outputs
-
-
-        except BaseException as base:
-            print('Error executing notebook cells: {}'.format(base))
-
-        finally:
-            print('Starting kernel shutdown')
-            # shutdown notebook
-            launcher.shutdown(kernel.kernel_id)
-
-        print('Notebook execution done')
-        print('')
+        executor_type = task['executor']
+        executor = self.executors[executor_type]
+        executor.execute_task(task)
 
     def schedule_task(self, task):
         id = uuid.uuid4()
@@ -79,22 +48,27 @@ class Scheduler:
         return id
 
     def start(self):
-        for i in range(1, 5):
+        self.running = True
+        for i in range(1, self.number_of_threads):
             t = Thread(target=self._executor)
             t.daemon = True
 
-            self.executors.append(t)
+            self.executor_threads.append(t)
 
             t.start()
 
     def stop(self):
-        self.queue.join()
+        #self.queue.join()
+        self.running = False
 
-        for t in self.executors:
-            t._stop()
+        for t in self.executor_threads:
+            t.join()
 
     @staticmethod
     def _validate_task(task):
+        if 'executor' not in task.keys():
+            raise ValueError('Submitted task is missing [executor] information')
+
         if 'host' not in task.keys():
             raise ValueError('Submitted task is missing [host] information')
 
@@ -112,15 +86,3 @@ class Scheduler:
             return notebook_content
         except BaseException as base:
             raise Exception('Error reading notebook source "{}": {}'.format(notebook_location, base))
-
-#
-# host = 'lresende-elyra:8888'
-# kernelspec = 'spark_scala_yarn_cluster'
-# notebook_location = 'http://home.apache.org/~lresende/notebooks/notebook-brunel.ipynb'
-# priority = 0
-#
-# scheduler = Scheduler()
-# scheduler.schedule(host, kernelspec, notebook_location, priority)
-# scheduler.start()
-#
-# time.sleep(30 * 60)
