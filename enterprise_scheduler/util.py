@@ -1,10 +1,13 @@
-
+import os
 import asyncio
+import zipfile
+
 
 def fix_asyncio_event_loop_policy(asyncio):
     """
     Work around https://github.com/tornadoweb/tornado/issues/2183
     """
+
     class PatchedDefaultEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
         def get_event_loop(self):
@@ -21,4 +24,12 @@ def fix_asyncio_event_loop_policy(asyncio):
 
     asyncio.set_event_loop_policy(PatchedDefaultEventLoopPolicy())
 
+def zip_directory(zip_name, directory):
+    zip_file = zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED)
+
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            zip_file.write(os.path.join(root, file), file)
+
+    zip_file.close()
 

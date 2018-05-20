@@ -10,17 +10,17 @@ with open('README.rst') as readme_file:
 
 requirements = [
     'click>=6.0',
-    'bumpversion == 0.5.3',
-    'wheel == 0.30.0',
-    'watchdog == 0.8.3',
-    'flake8 == 3.5.0',
-    'tox == 2.9.1',
-    'coverage == 4.5.1',
-    'Sphinx == 1.7.1',
-    'twine == 1.10.0',
-    'nbconvert == 5.3.1',
+    'bumpversion>=0.5.3',
+    'wheel>=0.30.0',
+    'watchdog>=0.8.3',
+    'flake8>=3.5.0',
+    'tox>=2.9.1',
+    'coverage>=4.5.1',
+    'Sphinx>=1.7.1',
+    'twine>=1.10.0',
+    'nbconvert>=5.3.1',
     'requests >= 2.8, < 3.0',
-    'flask-restful == 0.3.6'
+    'flask-restful>=0.3.6'
 ]
 
 setup_requirements = [ ]
@@ -59,6 +59,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/lresende/enterprise_scheduler',
-    version='0.1.0',
+    version='0.1.0.dev0',
     zip_safe=False,
 )

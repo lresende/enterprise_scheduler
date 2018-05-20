@@ -57,6 +57,18 @@ class TestEnterpriseScheduler(unittest.TestCase):
 
         TestEnterpriseScheduler.scheduler.schedule_task(task)
 
+    def test_execute_ffdl_task_with_embedded_notebook(self):
+        notebook = self._read_notebook('simple.ipynb')
+
+        task = {}
+        task['executor'] = 'ffdl'
+        task['host'] = DEFAULT_GATEWAY
+        task['kernelspec'] = DEFAULT_KERNELSPEC
+        task['notebook'] = notebook
+
+        TestEnterpriseScheduler.scheduler.schedule_task(task)
+
+
     def _read_notebook(self, filename):
         filename = os.path.join(RESOURCES, filename)
         with open(filename, 'r') as f:

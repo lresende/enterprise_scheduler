@@ -1,0 +1,1 @@
+dstop; docker run -it --volume /Users/lresende/opensource/jupyter/jupyter_enterprise_scheduler/enterprise_scheduler/resources/ffdl/:/tmp/scheduler tensorflow/tensorflow /bin/bash -x /tmp/scheduler/start.sh
