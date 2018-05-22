@@ -29,7 +29,7 @@ class Scheduler:
                 self.queue.task_done()
 
     def _execute_task(self, task):
-        executor_type = task['executor']
+        executor_type = task['executor'].lower()
         executor = self.executors[executor_type]
         executor.execute_task(task)
 
