@@ -1,5 +1,5 @@
-name: tf_convolutional_network_tutorial
-description: Convolutional network model using tensorflow
+name: EG bootloader
+description: Starts up EG and a client and runs the zipped notebook
 version: "1.0"
 gpus: 0
 cpus: 0.5
@@ -22,11 +22,7 @@ data_stores:
 framework:
   name: tensorflow
   version: "1.5.0-py3"
-  command: >
-    python3 convolutional_network.py --trainImagesFile ${DATA_DIR}/train-images-idx3-ubyte.gz
-      --trainLabelsFile ${DATA_DIR}/train-labels-idx1-ubyte.gz --testImagesFile ${DATA_DIR}/t10k-images-idx3-ubyte.gz
-      --testLabelsFile ${DATA_DIR}/t10k-labels-idx1-ubyte.gz --learningRate 0.001
-      --trainingIters 2000
+  command: ./start.sh
   # Change trainingIters to 20000 if you want your model to have over 80% Accuracy rate.
 
 #evaluation_metrics:

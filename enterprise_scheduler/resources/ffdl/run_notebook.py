@@ -25,7 +25,7 @@ try:
     print('reading notebook contents')
     notebook = None
     with open('notebook.ipynb', 'r') as f:
-        notebook = nbformat.reads(f.read().decode(), as_version=4)
+        notebook = nbformat.reads(f.read(), as_version=4)
 
     if not notebook:
         raise RuntimeError('Error reading notebook file')
@@ -33,7 +33,7 @@ try:
     print('Starting kernel...')
 
     launcher = KernelLauncher('localhost:8888')
-    kernel = launcher.launch(notebook.metadata.kernelspec.name)
+    kernel = launcher.launch(notebook['metadata']['kernelspec']['name'])
 
     time.sleep(10)
 
