@@ -7,3 +7,4 @@ jupyter enterprisegateway --ip=0.0.0.0 --port=8888 &
 
 ./run_notebook.py
 
+kill $(ps aux | grep jupyter-enterprisegateway | awk '{print $2}')
