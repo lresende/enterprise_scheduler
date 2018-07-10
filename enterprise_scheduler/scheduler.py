@@ -29,7 +29,7 @@ class Scheduler:
                 self.queue.task_done()
 
     def _execute_task(self, task):
-        executor_type = task['executor'].lower()  # TF, Caffe, Pytorch etc.
+        executor_type = task['executor'].lower()  # Jupyter, Docker, FfDL
         executor = self.executors[executor_type]
         executor.execute_task(task)
 

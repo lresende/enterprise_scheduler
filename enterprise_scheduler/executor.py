@@ -9,6 +9,7 @@ import zipfile
 import nbformat
 
 from subprocess import Popen, PIPE
+from shutil import copyfile
 
 from enterprise_scheduler.kernel_client import KernelLauncher
 from enterprise_scheduler.util import zip_directory
@@ -52,7 +53,6 @@ class JupyterExecutor(Executor):
                 outputs.append(response)
                 cell['outputs'] = outputs
 
-
         except BaseException as base:
             print('Error executing notebook cells: {}'.format(base))
 
@@ -79,53 +79,50 @@ class FfDLExecutor(Executor):
         if not os.path.exists(self.workdir):
             os.makedirs(self.workdir)
 
-        self.runtimedir = os.path.join(os.path.dirname(__file__), 'resources/ffdl')
+        rootdir = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+        self.runtimedir = os.path.join(rootdir, 'resources/ffdl')
         print(self.runtimedir)
 
     def execute_task(self, task):
 
-        #docker run -it
-        # --volume /Users/lresende/opensource/jupyter/jupyter_enterprise_scheduler/enterprise_scheduler/resources/ffdl/:/tmp/scheduler
-        # tensorflow/tensorflow
-        # /bin/bash -x /tmp/scheduler/start.sh
-
-        #command = 'docker run --volume {}:/tmp/scheduler tensorflow/tensorflow /bin/bash -x /tmp/scheduler/start.sh'.format(self.runtimedir)
-
-        ffdl_endpoint = '################'
+        ffdl_endpoint = task['host']
+        ffdl_authorization = task['user']
+        ffdl_userinfo = task['userinfo']
         ffdl_zip = self._create_ffdl_zip(task)
         ffdl_manifest = self._create_manifest(task)
 
         command = 'curl -X POST "' + ffdl_endpoint + '" ' \
                   '-H "accept: application/json" ' \
-                  '-H "Authorization: ###########" ' \
-                  '-H "X-Watson-Userinfo: ##############" ' \
+                  '-H "Authorization: ' + ffdl_authorization + '" ' \
+                  '-H "X-Watson-Userinfo: ' + ffdl_userinfo + '" ' \
                   '-H "Content-Type: multipart/form-data" ' \
                   '-F "model_definition=@' + ffdl_zip + ';type=application/zip" ' \
-                  '-F "manifest=@' + ffdl_manifest + ';type="'
+                  '-F "manifest=@' + ffdl_manifest + '"'
 
-
-        print('>>> {}'.format(command))
-
-        p = Popen([command ], stdout=PIPE, stderr=PIPE, shell=True, cwd=self.runtimedir)
-        p.wait()
-        #print(p.stdout.read())
-        #print(p.stderr.read())
-
-        #pass
+        try:
+            p = Popen([command ], stdout=PIPE, stderr=PIPE, shell=True, cwd=self.runtimedir)
+            p.wait()
+            #print(p.stdout.read())
+            #print(p.stderr.read())
+        finally:
+            if(p.stderr):
+                p.stderr.close()
+            if(p.stdout):
+                p.stdout.close()
 
     def _create_manifest(self, task):
-        file_name = 'manifest-' + str(uuid.uuid4())[:8]
+        file_name = 'manifest-' + str(task['id'])[:8]
         file_location = self.workdir + '/' + file_name + ".yml"
 
         manifest_dict = dict(
             name=file_name,
-            description='',
+            description='Train Jupyter Notebook model in FfDL',
             version="1.0",
-            gpus=0,
-            cpus=1,
-            memory='1Gb',
+            gpus=task['gpus'],
+            cpus=task['cpus'],
+            memory=task['memory'],
             learners=1,
-            data_stores= dict(
+            data_stores= [dict(
                 id='sl-internal-os',
                 type='mount_cos',
                 training_data= dict(
@@ -135,14 +132,14 @@ class FfDLExecutor(Executor):
                     container='tf_trained_model'
                 ),
                 connection= dict(
-                    auth_url='########################',
-                    user_name='test',
-                    password='test'
+                    auth_url=task['cos_endpoint'],
+                    user_name=task['cos_user'],
+                    password=task['cos_password']
                 )
-            ),
+            )],
             framework= dict(
-                name=task['executor'],
-                version='"1.5.0-py3"',
+                name=task['framework'],
+                version='1.5.0-py3',
                 command='./start.sh'    ## Run the start script for EG and kernel
             #),
             #evaluation_metrics=dict(
@@ -156,15 +153,21 @@ class FfDLExecutor(Executor):
         return file_location
 
     def _create_ffdl_zip(self, task):
-        unique_id = 'ffdl-' + str(uuid.uuid4())[:8]
+        unique_id = 'ffdl-' + str(task['id'])[:8]
         task_directory = os.path.join(self.workdir, unique_id)
         os.makedirs(task_directory)
 
-        self._write_file(task_directory, "notebook.ipynb", task['notebook'])
+        self._write_file(task_directory, "notebook.ipynb", json.dumps(task['notebook']))
+
+        copyfile(os.path.join(self.runtimedir, "start.sh"),
+                 os.path.join(task_directory, "start.sh"))
+
+        copyfile(os.path.join(self.runtimedir, "run_notebook.py"),
+                 os.path.join(task_directory, "run_notebook.py"))
 
         zip_file = os.path.join(self.workdir, '{}.zip'.format(unique_id))
-        print('>>> {}'.format(zip_file))
-        print('>>> {}'.format(task_directory))
+        #print('>>> {}'.format(zip_file))
+        #print('>>> {}'.format(task_directory))
         zip_directory(zip_file, task_directory)
 
         return zip_file
