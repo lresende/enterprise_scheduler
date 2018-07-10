@@ -1,16 +1,9 @@
 #!/usr/bin/env python
 
-import os
-import json
-import tempfile
 import time
-import uuid
-import zipfile
-
 import nbformat
 
 from enterprise_scheduler.kernel_client import KernelLauncher
-
 
 print('')
 print('Waiting Enterprise Gateway to load...')
