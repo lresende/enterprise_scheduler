@@ -27,11 +27,8 @@ class SchedulerResource(Resource):
         global scheduler
         task = request.get_json(force=True)
 
-        print(task)
-        print(task.keys())
-
-        if 'host' not in task.keys():
-            task['host'] = self.default_gateway_host
+        if 'endpoint' not in task.keys():
+            task['endpoint'] = self.default_gateway_host
 
         if 'kernelspec' not in task.keys():
             task['kernelspec'] = self.default_kernelspec

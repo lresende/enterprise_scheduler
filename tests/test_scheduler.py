@@ -42,7 +42,7 @@ class TestEnterpriseScheduler(unittest.TestCase):
 
         task = {}
         task['executor'] = 'jupyter'
-        task['host'] = DEFAULT_GATEWAY
+        task['endpoint'] = DEFAULT_GATEWAY
         task['kernelspec'] = DEFAULT_KERNELSPEC
         task['notebook'] = notebook
 
@@ -51,19 +51,28 @@ class TestEnterpriseScheduler(unittest.TestCase):
     def test_execute_jupyter_task_with_remote_notebook(self):
         task = {}
         task['executor'] = 'jupyter'
-        task['host'] = DEFAULT_GATEWAY
+        task['endpoint'] = DEFAULT_GATEWAY
         task['kernelspec'] = DEFAULT_KERNELSPEC
         task['notebook_location'] = 'http://home.apache.org/~lresende/notebooks/notebook-brunel.ipynb'
 
         TestEnterpriseScheduler.scheduler.schedule_task(task)
 
     def test_execute_ffdl_task_with_embedded_notebook(self):
-        notebook = self._read_notebook('simple.ipynb')
+        notebook = self._read_notebook('ffdl.ipynb')
 
         task = {}
         task['executor'] = 'ffdl'
-        task['host'] = DEFAULT_GATEWAY
-        task['kernelspec'] = DEFAULT_KERNELSPEC
+        task['framework'] = 'tensorflow'
+        task['endpoint'] = '##########'
+        task['kernelspec'] = 'python3'
+        task['user'] = '##########'
+        task['userinfo'] = 'bluemix-instance-id=test-user'
+        task['cpus'] = 1
+        task['gpus'] = 0
+        task['memory'] = '1Gb'
+        task['cos_endpoint'] = '##########'
+        task['cos_user'] = '##########'
+        task['cos_password'] = '##########'
         task['notebook'] = notebook
 
         TestEnterpriseScheduler.scheduler.schedule_task(task)
@@ -72,4 +81,4 @@ class TestEnterpriseScheduler(unittest.TestCase):
     def _read_notebook(self, filename):
         filename = os.path.join(RESOURCES, filename)
         with open(filename, 'r') as f:
-           return json.load(f)
+            return json.load(f)

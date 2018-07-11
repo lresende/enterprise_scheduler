@@ -2,9 +2,7 @@ import os
 import json
 import tempfile
 import time
-import uuid
 import yaml
-import zipfile
 
 import nbformat
 
@@ -34,7 +32,7 @@ class JupyterExecutor(Executor):
         print('Start notebook execution...')
         print('Starting kernel...')
 
-        launcher = KernelLauncher(task['host'])
+        launcher = KernelLauncher(task['endpoint'])
         kernel = launcher.launch(task['kernelspec'])
 
         time.sleep(10)
@@ -85,7 +83,7 @@ class FfDLExecutor(Executor):
 
     def execute_task(self, task):
 
-        ffdl_endpoint = task['host']
+        ffdl_endpoint = task['endpoint']
         ffdl_authorization = task['user']
         ffdl_userinfo = task['userinfo']
         ffdl_zip = self._create_ffdl_zip(task)
@@ -98,6 +96,8 @@ class FfDLExecutor(Executor):
                   '-H "Content-Type: multipart/form-data" ' \
                   '-F "model_definition=@' + ffdl_zip + ';type=application/zip" ' \
                   '-F "manifest=@' + ffdl_manifest + '"'
+
+        #print('>>> Submitting \n {}'.format(command))
 
         try:
             p = Popen([command ], stdout=PIPE, stderr=PIPE, shell=True, cwd=self.runtimedir)

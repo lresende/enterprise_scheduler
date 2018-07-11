@@ -69,8 +69,8 @@ class Scheduler:
         if 'executor' not in task.keys():
             raise ValueError('Submitted task is missing [executor] information')
 
-        if 'host' not in task.keys():
-            raise ValueError('Submitted task is missing [host] information')
+        if 'endpoint' not in task.keys():
+            raise ValueError('Submitted task is missing [endpoint] information')
 
         if 'kernelspec' not in task.keys():
             raise ValueError('Submitted task is missing [kernelspec] information')
