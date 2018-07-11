@@ -59,6 +59,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/lresende/enterprise_scheduler',
-    version='0.1.0.dev1',
+    version='0.1.0.dev2',
     zip_safe=False,
 )
