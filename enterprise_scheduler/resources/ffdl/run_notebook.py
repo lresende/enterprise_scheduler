@@ -28,6 +28,9 @@ try:
     launcher = KernelLauncher('localhost:8888')
     kernel = launcher.launch(notebook['metadata']['kernelspec']['name'])
 
+    if not kernel:
+        raise RuntimeError('Error starting kernel with kernelspec: {}'.format())
+
     time.sleep(10)
 
     print('Starting cell execution')
