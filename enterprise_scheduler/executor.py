@@ -3,15 +3,14 @@ import json
 import tempfile
 import time
 import yaml
-
+import requests
 import nbformat
 
-from subprocess import Popen, PIPE
 from shutil import copyfile
-
+from requests.auth import HTTPBasicAuth
 from enterprise_scheduler.kernel_client import KernelLauncher
 from enterprise_scheduler.util import zip_directory
-
+from urllib.parse import urlparse
 
 class Executor:
     """Base executor class for :
@@ -85,30 +84,31 @@ class FfDLExecutor(Executor):
 
         ffdl_endpoint = task['endpoint']
         ffdl_authorization = task['user']
+        ffdl_authorization_pass = "temporary"
         ffdl_userinfo = task['userinfo']
         ffdl_zip = self._create_ffdl_zip(task)
         ffdl_manifest = self._create_manifest(task)
+        ffdl_ui_port = "32150"  ## FFDL UI hosting can vary
 
-        command = 'curl -X POST "' + ffdl_endpoint + '" ' \
-                  '-H "accept: application/json" ' \
-                  '-H "Authorization: ' + ffdl_authorization + '" ' \
-                  '-H "X-Watson-Userinfo: ' + ffdl_userinfo + '" ' \
-                  '-H "Content-Type: multipart/form-data" ' \
-                  '-F "model_definition=@' + ffdl_zip + ';type=application/zip" ' \
-                  '-F "manifest=@' + ffdl_manifest + '"'
+        task_headers = {"X-Watson-Userinfo": ffdl_userinfo}
 
-        #print('>>> Submitting \n {}'.format(command))
+        task_files = {'model_definition': open(ffdl_zip, 'rb'),
+                      "manifest": open(ffdl_manifest, 'rb')}
 
         try:
-            p = Popen([command ], stdout=PIPE, stderr=PIPE, shell=True, cwd=self.runtimedir)
-            p.wait()
-            #print(p.stdout.read())
-            #print(p.stderr.read())
-        finally:
-            if(p.stderr):
-                p.stderr.close()
-            if(p.stdout):
-                p.stdout.close()
+            result = requests.post(ffdl_endpoint,
+                                   auth=HTTPBasicAuth(ffdl_authorization, ffdl_authorization_pass),
+                                   headers=task_headers,
+                                   files=task_files)
+
+            print("FFDL API responded with status {} and response {}".format(result.status_code,
+                                                                             json.loads(result.content)))
+            #print("Training URL : http://{}:{}/#/trainings/{}".format(urlparse(ffdl_endpoint).netloc.split(":")[0],
+            #                                                          ffdl_ui_port,
+            #                                                          json.loads(result.content)['model_id']))
+
+        except requests.exceptions.RequestException as err:
+            print(err)
 
     def _create_manifest(self, task):
         file_name = 'manifest-' + str(task['id'])[:8]
