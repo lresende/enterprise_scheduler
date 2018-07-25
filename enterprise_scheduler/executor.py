@@ -92,8 +92,11 @@ class FfDLExecutor(Executor):
 
         task_headers = {"X-Watson-Userinfo": ffdl_userinfo}
 
-        task_files = {'model_definition': open(ffdl_zip, 'rb'),
-                      "manifest": open(ffdl_manifest, 'rb')}
+        model_definition = open(ffdl_zip, 'rb')
+        manifest = open(ffdl_manifest, 'rb')
+
+        task_files = {'model_definition': model_definition,
+                      "manifest": manifest }
 
         try:
             result = requests.post(ffdl_endpoint,
@@ -103,12 +106,25 @@ class FfDLExecutor(Executor):
 
             print("FFDL API responded with status {} and response {}".format(result.status_code,
                                                                              json.loads(result.content)))
+
+            result.raise_for_status()
             #print("Training URL : http://{}:{}/#/trainings/{}".format(urlparse(ffdl_endpoint).netloc.split(":")[0],
             #                                                          ffdl_ui_port,
             #                                                          json.loads(result.content)['model_id']))
-
+        except requests.exceptions.Timeout:
+            print("FFDL Job Submission Request Timed Out....")
+        except requests.exceptions.TooManyRedirects:
+            print("Too many redirects were detected during job submission")
+        except requests.exceptions.ConnectionError:
+            print("Connection Error: Could not connect to {}".format(task['endpoint']))
+        except requests.exceptions.HTTPError as http_err:
+            print("HTTP Error - {} ".format(http_err))
         except requests.exceptions.RequestException as err:
             print(err)
+
+        finally:
+            manifest.close()
+            model_definition.close()
 
     def _create_manifest(self, task):
         file_name = 'manifest-' + str(task['id'])[:8]
