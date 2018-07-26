@@ -105,12 +105,11 @@ class FfDLExecutor(Executor):
                                    files=task_files)
 
             print("FFDL API responded with status {} and response {}".format(result.status_code,
-                                                                             json.loads(result.content)))
+                                                                             result.json()))
 
-            result.raise_for_status()
-            #print("Training URL : http://{}:{}/#/trainings/{}".format(urlparse(ffdl_endpoint).netloc.split(":")[0],
-            #                                                          ffdl_ui_port,
-            #                                                          json.loads(result.content)['model_id']))
+            print("Training URL : http://{}:{}/#/trainings/{}/show".format(urlparse(ffdl_endpoint).netloc.split(":")[0],
+                                                                      ffdl_ui_port,
+                                                                      json.loads(result.content)['model_id']))
         except requests.exceptions.Timeout:
             print("FFDL Job Submission Request Timed Out....")
         except requests.exceptions.TooManyRedirects:
