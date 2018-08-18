@@ -131,7 +131,7 @@ class FfDLExecutor(Executor):
 
         manifest_dict = dict(
             name=file_name,
-            description='Train Jupyter Notebook model in FfDL',
+            description='Train Jupyter Notebook: ' + task['notebook_name'],
             version="1.0",
             gpus=task['gpus'],
             cpus=task['cpus'],
@@ -156,9 +156,6 @@ class FfDLExecutor(Executor):
                 name=task['framework'],
                 version='1.5.0-py3',
                 command='./start.sh'    ## Run the start script for EG and kernel
-            #),
-            #evaluation_metrics=dict(
-            #    type=''
             )
         )
 
@@ -173,6 +170,9 @@ class FfDLExecutor(Executor):
         os.makedirs(task_directory)
 
         self._write_file(task_directory, "notebook.ipynb", json.dumps(task['notebook']))
+
+        for dependency in task['dependencies']:
+            self._write_file(task_directory, dependency, task['dependencies'][dependency])
 
         copyfile(os.path.join(self.runtimedir, "start.sh"),
                  os.path.join(task_directory, "start.sh"))
