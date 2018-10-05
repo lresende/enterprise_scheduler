@@ -3,7 +3,7 @@
 import time
 import nbformat
 
-from enterprise_scheduler.kernel_client import KernelLauncher
+from enterprise_gateway.client.gateway_client import GatewayClient
 
 print('')
 print('Waiting Enterprise Gateway to load...')
@@ -25,8 +25,8 @@ try:
 
     print('Starting kernel...')
 
-    launcher = KernelLauncher('localhost:8888')
-    kernel = launcher.launch(notebook['metadata']['kernelspec']['name'])
+    launcher = GatewayClient('localhost:8888')
+    kernel = launcher.start_kernel(notebook['metadata']['kernelspec']['name'])
 
     if not kernel:
         raise RuntimeError('Error starting kernel with kernelspec: {}'.format())
@@ -49,7 +49,7 @@ except BaseException as base:
 finally:
     print('Starting kernel shutdown')
     # shutdown notebook
-    launcher.shutdown(kernel.kernel_id)
+    launcher.shutdown_kernel(kernel)
 
 print('Notebook execution done')
 print('')

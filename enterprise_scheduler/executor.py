@@ -8,7 +8,7 @@ import nbformat
 
 from shutil import copyfile
 from requests.auth import HTTPBasicAuth
-from enterprise_scheduler.kernel_client import KernelLauncher
+from enterprise_gateway.client.gateway_client import GatewayClient
 from enterprise_scheduler.util import zip_directory
 from urllib.parse import urlparse
 
@@ -31,8 +31,8 @@ class JupyterExecutor(Executor):
         print('Start notebook execution...')
         print('Starting kernel...')
 
-        launcher = KernelLauncher(task['endpoint'])
-        kernel = launcher.launch(task['kernelspec'])
+        launcher = GatewayClient(task['endpoint'])
+        kernel = launcher.start_kernel(task['kernelspec'])
 
         time.sleep(10)
 
@@ -56,7 +56,7 @@ class JupyterExecutor(Executor):
         finally:
             print('Starting kernel shutdown')
             # shutdown notebook
-            launcher.shutdown(kernel.kernel_id)
+            launcher.shutdown_kernel(kernel)
 
         print('Notebook execution done')
         print('')
@@ -179,6 +179,9 @@ class FfDLExecutor(Executor):
 
         copyfile(os.path.join(self.runtimedir, "run_notebook.py"),
                  os.path.join(task_directory, "run_notebook.py"))
+
+        copyfile(os.path.join(self.runtimedir, "jupyter_enterprise_gateway-2.0.0.dev0-py2.py3-none-any.whl"),
+                 os.path.join(task_directory, "jupyter_enterprise_gateway-2.0.0.dev0-py2.py3-none-any.whl"))
 
         zip_file = os.path.join(self.workdir, '{}.zip'.format(unique_id))
         #print('>>> {}'.format(zip_file))

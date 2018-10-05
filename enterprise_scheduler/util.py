@@ -27,8 +27,10 @@ def fix_asyncio_event_loop_policy(asyncio):
 def zip_directory(zip_name, directory):
     zip_file = zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED)
 
+    print('> Processing resources from: ' + directory)
     for root, dirs, files in os.walk(directory):
         for file in files:
+            print('> Adding file to job archive: ' + file)
             zip_file.write(os.path.join(root, file), file)
 
     zip_file.close()
