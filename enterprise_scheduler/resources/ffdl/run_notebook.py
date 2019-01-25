@@ -48,7 +48,7 @@ except BaseException as base:
 
 finally:
     print('Starting kernel shutdown')
-    # shutdown notebook
+    # shutdown kernel
     launcher.shutdown_kernel(kernel)
 
 print('Notebook execution done')

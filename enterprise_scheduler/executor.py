@@ -12,6 +12,7 @@ from enterprise_gateway.client.gateway_client import GatewayClient
 from enterprise_scheduler.util import zip_directory
 from urllib.parse import urlparse
 
+
 class Executor:
     """Base executor class for :
         - Jupyter
@@ -88,9 +89,10 @@ class FfDLExecutor(Executor):
         ffdl_userinfo = task['userinfo']
         ffdl_zip = self._create_ffdl_zip(task)
         ffdl_manifest = self._create_manifest(task)
-        ffdl_ui_port = "32150"  ## FFDL UI hosting can vary
+        ffdl_ui_port = "32263"  ## FFDL UI hosting can vary
 
-        task_headers = {"X-Watson-Userinfo": ffdl_userinfo}
+        task_headers = {'accept': 'application/json',
+                        "X-Watson-Userinfo": ffdl_userinfo}
 
         model_definition = open(ffdl_zip, 'rb')
         manifest = open(ffdl_manifest, 'rb')
@@ -129,9 +131,13 @@ class FfDLExecutor(Executor):
         file_name = 'manifest-' + str(task['id'])[:8]
         file_location = self.workdir + '/' + file_name + ".yml"
 
+        task_description = 'Train Jupyter Notebook'
+        if 'notebook_name' in task:
+            task_description += ': ' + task['notebook_name']
+
         manifest_dict = dict(
             name=file_name,
-            description='Train Jupyter Notebook: ' + task['notebook_name'],
+            description=task_description,
             version="1.0",
             gpus=task['gpus'],
             cpus=task['cpus'],
@@ -171,8 +177,9 @@ class FfDLExecutor(Executor):
 
         self._write_file(task_directory, "notebook.ipynb", json.dumps(task['notebook']))
 
-        for dependency in task['dependencies']:
-            self._write_file(task_directory, dependency, task['dependencies'][dependency])
+        if 'dependencies' in task:
+            for dependency in task['dependencies']:
+                self._write_file(task_directory, dependency, task['dependencies'][dependency])
 
         copyfile(os.path.join(self.runtimedir, "start.sh"),
                  os.path.join(task_directory, "start.sh"))
@@ -180,16 +187,12 @@ class FfDLExecutor(Executor):
         copyfile(os.path.join(self.runtimedir, "run_notebook.py"),
                  os.path.join(task_directory, "run_notebook.py"))
 
-        copyfile(os.path.join(self.runtimedir, "jupyter_enterprise_gateway-2.0.0.dev0-py2.py3-none-any.whl"),
-                 os.path.join(task_directory, "jupyter_enterprise_gateway-2.0.0.dev0-py2.py3-none-any.whl"))
-
         zip_file = os.path.join(self.workdir, '{}.zip'.format(unique_id))
-        #print('>>> {}'.format(zip_file))
-        #print('>>> {}'.format(task_directory))
+        # print('>>> {}'.format(zip_file))
+        # print('>>> {}'.format(task_directory))
         zip_directory(zip_file, task_directory)
 
         return zip_file
-
 
     @staticmethod
     def _write_file(directory, filename, contents):
