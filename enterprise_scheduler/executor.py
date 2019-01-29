@@ -6,6 +6,7 @@ import yaml
 import requests
 import nbformat
 
+from ffdl.client import Config, FfDLClient
 from shutil import copyfile
 from requests.auth import HTTPBasicAuth
 from enterprise_gateway.client.gateway_client import GatewayClient
@@ -82,36 +83,26 @@ class FfDLExecutor(Executor):
         print(self.runtimedir)
 
     def execute_task(self, task):
+        config = Config(api_endpoint=task['endpoint'],
+                        user=task['user'],
+                        password="temporary",
+                        user_info=task['userinfo'])
 
-        ffdl_endpoint = task['endpoint']
-        ffdl_authorization = task['user']
-        ffdl_authorization_pass = "temporary"
-        ffdl_userinfo = task['userinfo']
         ffdl_zip = self._create_ffdl_zip(task)
         ffdl_manifest = self._create_manifest(task)
         ffdl_ui_port = "32263"  ## FFDL UI hosting can vary
 
-        task_headers = {'accept': 'application/json',
-                        "X-Watson-Userinfo": ffdl_userinfo}
-
-        model_definition = open(ffdl_zip, 'rb')
-        manifest = open(ffdl_manifest, 'rb')
-
-        task_files = {'model_definition': model_definition,
-                      "manifest": manifest }
+        files = {'model_definition': ffdl_zip,
+                 'manifest': ffdl_manifest }
 
         try:
-            result = requests.post(ffdl_endpoint,
-                                   auth=HTTPBasicAuth(ffdl_authorization, ffdl_authorization_pass),
-                                   headers=task_headers,
-                                   files=task_files)
+            client = FfDLClient(config)
 
-            print("FFDL API responded with status {} and response {}".format(result.status_code,
-                                                                             result.json()))
+            result = client.post('/models', **files)
 
-            print("Training URL : http://{}:{}/#/trainings/{}/show".format(urlparse(ffdl_endpoint).netloc.split(":")[0],
+            print("Training URL : http://{}:{}/#/trainings/{}/show".format(urlparse(config.api_endpoint).netloc.split(":")[0],
                                                                       ffdl_ui_port,
-                                                                      json.loads(result.content)['model_id']))
+                                                                      result['model_id']))
         except requests.exceptions.Timeout:
             print("FFDL Job Submission Request Timed Out....")
         except requests.exceptions.TooManyRedirects:
@@ -122,10 +113,6 @@ class FfDLExecutor(Executor):
             print("HTTP Error - {} ".format(http_err))
         except requests.exceptions.RequestException as err:
             print(err)
-
-        finally:
-            manifest.close()
-            model_definition.close()
 
     def _create_manifest(self, task):
         file_name = 'manifest-' + str(task['id'])[:8]
