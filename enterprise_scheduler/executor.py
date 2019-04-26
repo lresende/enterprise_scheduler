@@ -100,9 +100,15 @@ class FfDLExecutor(Executor):
 
             result = client.post('/models', **files)
 
-            print("Training URL : http://{}:{}/#/trainings/{}/show".format(urlparse(config.api_endpoint).netloc.split(":")[0],
-                                                                      ffdl_ui_port,
-                                                                      result['model_id']))
+            if 'models' not in result:
+                print("FFDL Job Submission Request Failed: {}".format(result['message']))
+            elif result['models']:
+                print("Training URL : http://{}:{}/#/trainings/{}/show"
+                      .format(urlparse(config.api_endpoint).netloc.split(":")[0],
+                              ffdl_ui_port,
+                              result['model_id']))
+            else:
+                print("FFDL Job Submission Failed")
         except requests.exceptions.Timeout:
             print("FFDL Job Submission Request Timed Out....")
         except requests.exceptions.TooManyRedirects:
