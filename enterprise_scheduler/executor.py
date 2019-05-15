@@ -5,6 +5,7 @@ import time
 import yaml
 import requests
 import nbformat
+import shlex
 
 from ffdl.client import Config, FfDLClient
 from shutil import copyfile
@@ -134,10 +135,10 @@ class FfDLExecutor(Executor):
                 id='sl-internal-os',
                 type='mount_cos',
                 training_data= dict(
-                    container='tf_training_data'
+                    container=task['cos_bucket']
                 ),
                 training_results= dict(
-                    container='tf_trained_model'
+                    container=task['cos_bucket']
                 ),
                 connection= dict(
                     auth_url=task['cos_endpoint'],
@@ -168,6 +169,8 @@ class FfDLExecutor(Executor):
             for dependency in task['dependencies']:
                 self._write_file(task_directory, dependency, task['dependencies'][dependency])
 
+        self._create_env_sh(task, task_directory)
+
         copyfile(os.path.join(self.runtimedir, "start.sh"),
                  os.path.join(task_directory, "start.sh"))
 
@@ -180,6 +183,17 @@ class FfDLExecutor(Executor):
         zip_directory(zip_file, task_directory)
 
         return zip_file
+
+    def _create_env_sh(self, task, task_directory):
+        lines = ["#!/usr/bin/env bash\n"]
+        print(task['env'])
+        for key, value in task['env'].items():
+            lines.append("export {}={}".format(shlex.quote(key),
+                                               shlex.quote(value)))
+
+        contents = "\n".join(lines) + "\n"
+        print(contents)
+        self._write_file(task_directory, "env.sh", contents)
 
     @staticmethod
     def _write_file(directory, filename, contents):
