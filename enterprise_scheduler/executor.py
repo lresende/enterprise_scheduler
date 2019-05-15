@@ -186,13 +186,11 @@ class FfDLExecutor(Executor):
 
     def _create_env_sh(self, task, task_directory):
         lines = ["#!/usr/bin/env bash\n"]
-        print(task['env'])
         for key, value in task['env'].items():
             lines.append("export {}={}".format(shlex.quote(key),
                                                shlex.quote(value)))
 
         contents = "\n".join(lines) + "\n"
-        print(contents)
         self._write_file(task_directory, "env.sh", contents)
 
     @staticmethod
