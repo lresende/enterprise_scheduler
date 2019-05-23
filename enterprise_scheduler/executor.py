@@ -95,30 +95,26 @@ class FfDLExecutor(Executor):
         files = {'model_definition': ffdl_zip,
                  'manifest': ffdl_manifest }
 
-        try:
-            client = FfDLClient(config)
+        client = FfDLClient(config)
 
-            result = client.post('/models', **files)
+        result = client.post('/models', **files)
 
-            if 'models' not in result:
-                print("FFDL Job Submission Request Failed: {}".format(result['message']))
-            elif result['models']:
-                print("Training URL : http://{}:{}/#/trainings/{}/show"
-                      .format(urlparse(config.api_endpoint).netloc.split(":")[0],
-                              ffdl_ui_port,
-                              result['model_id']))
-            else:
-                print("FFDL Job Submission Failed")
-        except requests.exceptions.Timeout:
-            print("FFDL Job Submission Request Timed Out....")
-        except requests.exceptions.TooManyRedirects:
-            print("Too many redirects were detected during job submission")
-        except requests.exceptions.ConnectionError:
-            print("Connection Error: Could not connect to {}".format(task['endpoint']))
-        except requests.exceptions.HTTPError as http_err:
-            print("HTTP Error - {} ".format(http_err))
-        except requests.exceptions.RequestException as err:
-            print(err)
+        if 'model_id' in result:
+            print("Training URL : http://{}:{}/#/trainings/{}/show"
+                  .format(urlparse(config.api_endpoint).netloc.split(":")[0],
+                          ffdl_ui_port,
+                          result['model_id']))
+        elif 'message' in result:
+            # Catches server-side FFDL errors returned with a 200 code
+            print("FFDL Job Submission Request Failed: {}".format(
+                result['message']))
+        elif 'error' in result:
+            # Catches HTTP errors returned by the FFDL server
+            print("FFDL Job Submission Request Failed: {}".format(
+                result['error']))
+        else:
+            # Cases with no error but the submission was unsuccessful
+            print("FFDL Job Submission Failed")
 
     def _create_manifest(self, task):
         file_name = 'manifest-' + str(task['id'])[:8]
