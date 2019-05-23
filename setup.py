@@ -20,7 +20,7 @@ requirements = [
     'twine>=1.10.0',
     'nbconvert>=5.3.1',
     'requests >= 2.8, < 3.0',
-    'ffdl-client>=0.1.0',
+    'ffdl-client>=0.1.2',
     'flask-restful>=0.3.6',
     'jupyter_enterprise_gateway>=1.0.0'
 ]

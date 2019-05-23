@@ -6,7 +6,8 @@ import yaml
 import requests
 import nbformat
 
-from ffdl.client import Config, FfDLClient
+from ffdl.client import Config
+from ffdl.client import FfDLClient
 from shutil import copyfile
 from requests.auth import HTTPBasicAuth
 from enterprise_gateway.client.gateway_client import GatewayClient
