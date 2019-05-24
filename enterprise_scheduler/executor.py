@@ -137,10 +137,10 @@ class FfDLExecutor(Executor):
                 id='sl-internal-os',
                 type='mount_cos',
                 training_data= dict(
-                    container='tf_training_data'
+                    container=task['cos_bucket_in']
                 ),
                 training_results= dict(
-                    container='tf_trained_model'
+                    container=task['cos_bucket_out']
                 ),
                 connection= dict(
                     auth_url=task['cos_endpoint'],
