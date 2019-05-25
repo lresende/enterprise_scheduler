@@ -22,6 +22,7 @@ import yaml
 import requests
 import nbformat
 import shlex
+import pkg_resources
 
 from ffdl.client import Config
 from ffdl.client import FfDLClient
@@ -97,8 +98,8 @@ class FfDLExecutor(Executor):
             os.makedirs(self.workdir)
 
         rootdir = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
-        self.runtimedir = os.path.join(rootdir, 'resources/ffdl')
-        print(self.runtimedir)
+        self.runtimedir = pkg_resources.resource_filename('enterprise_scheduler', 'resources/ffdl')
+        print('Resources dir: {} '.format(self.runtimedir))
 
     def execute_task(self, task):
         config = Config(api_endpoint=task['endpoint'],
